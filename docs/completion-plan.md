@@ -38,4 +38,10 @@ All three routing nodes use `timers basic 5 15 15 20`. Default RIP timing makes 
 
 ## Deferred scope: MHSRP
 
-MHSRP requires at least two explicit user VLANs, separate SVIs/HSRP groups, and a deliberate active-gateway distribution policy. It is intentionally not claimed by this single-VLAN baseline.
+The single-VLAN baseline keeps this work intentionally separate. Its implementation is now available in the `feat/mhsrp-vlan-expansion` branch and consists of VLAN 10/VLAN 20 SVIs, two virtual gateways, dot1q uplinks, split Active roles, and aligned RIPv2 return paths.
+
+## MHSRP implementation note
+
+The expansion uses S1 as the normal Active gateway for VLAN 10 and S2 for VLAN 20. This distributes normal first-hop forwarding without adding GLBP. On an S1 uplink fault, S2 assumes VLAN 10 as well; after recovery, S1 preempts only VLAN 10 and the intended split returns.
+
+The HSRP group number is not required to equal the VLAN ID. VLAN 10 uses group 1 because group 10's virtual MAC was not reachable in this specific GNS3/IOS combination. VLAN 20 retains group 20. The saved runtime configuration under `configs/mhsrp/` is authoritative for this emulator-specific decision.

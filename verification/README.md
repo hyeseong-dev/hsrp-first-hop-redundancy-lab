@@ -41,3 +41,9 @@ ping 192.0.2.1 -c 5
 ## Interpretation
 
 The test proves the intended relationship between first-hop selection and upstream return routing. It does **not** prove a lossless network: one remote probe was lost during recovery, which is expected while HSRP and RIP reconverge. Record packet loss and control-plane timing in each future topology change.
+
+## MHSRP expansion verification
+
+The feature branch adds two user VLANs and two representative clients. The verified normal state is S1 Active for VLAN 10 and S2 Active for VLAN 20. Both clients reached their own virtual IP and R1 Loopback0. R1 selected the matching Active device as return path.
+
+When S1 Fa1/11 was shut, S1's effective priorities became 90 (VLAN 10) and 70 (VLAN 20); S2 became Active for both virtual gateways. R1 moved VLAN 10 to S2 with RIP metric 6. After `no shutdown` on S1 Fa1/11, S1 preempted only VLAN 10, S2 retained VLAN 20, and the normal split returned.

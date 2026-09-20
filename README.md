@@ -1,10 +1,32 @@
 # HSRP First-Hop Redundancy Foundation Lab
 
-> **Status: single-VLAN HSRP implementation and failure recovery verified.**
+> **Baseline status: single-VLAN HSRP implementation and failure recovery verified.**
 
 GNS3 Cisco IOS 환경에서 두 L3 스위치가 하나의 가상 기본 게이트웨이를 제공하도록 구현한 FHRP 실습입니다. 단순히 HSRP 선출만 확인하지 않고, 상단 링크 장애가 발생했을 때 **HSRP 역할, RIPv2 반환 경로, 클라이언트 통신**이 함께 전환되는지 검증했습니다.
 
-이 저장소의 범위는 **단일 HSRP 그룹(VLAN 1)** 입니다. VLAN별 Active를 나누는 MHSRP는 후속 확장 과제로 명확히 분리합니다.
+`portfolio/hsrp-baseline` 브랜치는 위 단일 HSRP 검증본을 보존합니다. 현재 `feat/mhsrp-vlan-expansion` 브랜치는 VLAN별 Active를 나누는 **MHSRP 확장 구현 및 장애·복구 검증**을 추가합니다.
+
+## MHSRP expansion — `feat/mhsrp-vlan-expansion`
+
+| VLAN | Representative client | Virtual IP | Active in normal state | Preferred R1 return path |
+| --- | --- | --- | --- | --- |
+| VLAN 10 | PC10-USER `172.16.10.3/24` | `172.16.10.254` | S1-L3 | S1 `192.168.11.1`, metric 1 |
+| VLAN 20 | PC20-USER `172.16.20.3/24` | `172.16.20.254` | S2-L3 | S2 `192.168.12.2`, metric 1 |
+
+S3-L2 uses two `dot1q` uplinks to S1/S2 and access ports for VLAN 10 and VLAN 20. Each client keeps a VLAN-local virtual default gateway while normal traffic is distributed across the two L3 switches.
+
+The original plan used HSRP group 10 for VLAN 10. In this IOS/GNS3 combination, the group-10 virtual MAC responded inconsistently although both SVIs and HSRP election were healthy. VLAN 10 therefore uses the previously verified **HSRP group 1**, while VLAN 20 uses group 20. Group number and VLAN number do not need to match; the IP/VLAN association is explicit in the configuration. This is recorded as an emulator-specific compatibility decision, not a claim of a general Cisco limitation.
+
+### MHSRP verification
+
+| Test | Observed result | Status |
+| --- | --- | --- |
+| Normal election | VLAN 10: S1 Active / S2 Standby; VLAN 20: S2 Active / S1 Standby | pass |
+| Client reachability | PC10 and PC20 each reached its virtual gateway and R1 Loopback0 | pass |
+| Normal return routing | R1 selected S1 for `172.16.10.0/24` and S2 for `172.16.20.0/24`, both metric 1 | pass |
+| S1 uplink fault | S1 Fa1/11 down: S1 became Standby for both groups; S2 became Active for both groups | pass |
+| VLAN 10 return failover | R1 selected S2 `192.168.12.2`, metric 6 | pass |
+| Recovery | S1 preempted back to VLAN 10 Active; VLAN 20 remained S2 Active | pass |
 
 ## Topology
 
