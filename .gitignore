@@ -1,0 +1,17 @@
+# Vendor images and GNS3 runtime state are local dependencies, not source.
+*.image
+*.ghost
+*.nvram
+*.pcap
+*.pcapng
+*.key
+*.pem
+*.crt
+*.log
+project-files/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
